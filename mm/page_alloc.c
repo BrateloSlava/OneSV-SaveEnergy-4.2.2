@@ -1513,6 +1513,9 @@ void warn_alloc_failed(gfp_t gfp_mask, int order, const char *fmt, ...)
 	    debug_guardpage_minorder() > 0)
 		return;
 
+        if (!(gfp_mask & __GFP_WAIT))
+                filter |= SHOW_MEM_FILTER_PAGE_COUNT;
+
 	if (!(gfp_mask & __GFP_NOMEMALLOC))
 		if (test_thread_flag(TIF_MEMDIE) ||
 		    (current->flags & (PF_MEMALLOC | PF_EXITING)))
@@ -4568,6 +4571,7 @@ static struct trace_print_flags pageflag_names[] = {
 #ifdef CONFIG_MEMORY_FAILURE
 	{1UL << PG_hwpoison,		"hwpoison"	},
 #endif
+	{1UL << PG_readahead,           "PG_readahead"  },
 	{-1UL,				NULL		},
 };
 
