@@ -673,7 +673,7 @@ static void __init locate_unstable_memory(void)
 	msm8930_reserve_info.low_unstable_address = mb->start -
 					MIN_MEMORY_BLOCK_SIZE + mb->size;
 	msm8930_reserve_info.max_unstable_size = MIN_MEMORY_BLOCK_SIZE;
-	pr_info("low unstable address %lx max size %lx bank size %lx\n",
+	pr_debug("low unstable address %lx max size %lx bank size %lx\n",
 		msm8930_reserve_info.low_unstable_address,
 		msm8930_reserve_info.max_unstable_size,
 		msm8930_reserve_info.bank_size);
@@ -689,7 +689,7 @@ static void __init place_movable_zone(void)
 #ifdef CONFIG_ENABLE_DMM
 	movable_reserved_start = msm8930_reserve_info.low_unstable_address;
 	movable_reserved_size = msm8930_reserve_info.max_unstable_size;
-	pr_info("movable zone start %lx size %lx\n",
+	pr_debug("movable zone start %lx size %lx\n",
 		movable_reserved_start, movable_reserved_size);
 #endif
 }
@@ -709,9 +709,9 @@ static void __init k2_ul_reserve(void)
 		if (reserve_info->fixed_area_size) {
 			msm8930_fmem_pdata.phys =
 				reserve_info->fixed_area_start + MSM_MM_FW_SIZE;
-		pr_info("mm fw at %lx (fixed) size %x\n",
+		pr_debug("mm fw at %lx (fixed) size %x\n",
 			reserve_info->fixed_area_start, MSM_MM_FW_SIZE);
-		pr_info("fmem start %lx (fixed) size %lx\n",
+		pr_debug("fmem start %lx (fixed) size %lx\n",
 			msm8930_fmem_pdata.phys, msm8930_fmem_pdata.size);
 		}
 #endif
@@ -1446,10 +1446,10 @@ int64_t k2_ul_get_usbid_adc(void)
 
 	err = pm8xxx_adc_mpp_config_read(PM8XXX_AMUX_MPP_3, ADC_MPP_1_AMUX6, &result);
 	if (err) {
-		pr_info("[CABLE] %s: get adc fail, err %d\n", __func__, err);
+		pr_debug("[CABLE] %s: get adc fail, err %d\n", __func__, err);
 		return err;
 	}
-	pr_info("[CABLE] chan=%d, adc_code=%d, measurement=%lld, \
+	pr_debug("[CABLE] chan=%d, adc_code=%d, measurement=%lld, \
 			physical=%lld\n", result.chan, result.adc_code,
 			result.measurement, result.physical);
 	adc = result.physical;
@@ -1474,10 +1474,10 @@ void config_k2_ul_usb_id_gpios(bool output)
 	if (output) {
 		gpio_tlmm_config(usb_ID_PIN_ouput_table[0], GPIO_CFG_ENABLE);
 		gpio_set_value(MSM_USB_ID1, 1);
-		pr_info("[CABLE] %s: %d output high\n",  __func__, MSM_USB_ID1);
+		pr_debug("[CABLE] %s: %d output high\n",  __func__, MSM_USB_ID1);
 	} else {
 		gpio_tlmm_config(usb_ID_PIN_input_table[0], GPIO_CFG_ENABLE);
-		pr_info("[CABLE] %s: %d input none pull\n",  __func__, MSM_USB_ID1);
+		pr_debug("[CABLE] %s: %d input none pull\n",  __func__, MSM_USB_ID1);
 	}
 }
 
@@ -1504,7 +1504,7 @@ void k2ul_cable_detect_register(void)
 
 void pm8xxx_adc_device_driver_register(void)
 {
-	pr_info("%s: Register PM8XXX ADC device. rev: %d\n",
+	pr_debug("%s: Register PM8XXX ADC device. rev: %d\n",
 		__func__, system_rev);
 	k2ul_cable_detect_register();
 }
@@ -1671,13 +1671,13 @@ static int capella_pl_sensor_lpm_power(uint8_t enable)
 		if (rc < 0)
 			pr_err("[PS][cm3629] %s: enter lmp,set_optimum_mode l6 failed, rc=%d\n", __func__, rc);
 		else
-			pr_info("[PS][cm3629] %s: enter lmp,OK\n", __func__);
+			pr_debug("[PS][cm3629] %s: enter lmp,OK\n", __func__);
 	} else {
 		rc = regulator_set_optimum_mode(pl_reg_l9, 100000);
 		if (rc < 0)
 			pr_err("[PS][cm3629] %s: leave lmp,set_optimum_mode l6 failed, rc=%d\n", __func__, rc);
 		else
-			pr_info("[PS][cm3629] %s: leave lmp,OK\n", __func__);
+			pr_debug("[PS][cm3629] %s: leave lmp,OK\n", __func__);
 		msleep(10);
 	}
 	mutex_unlock(&sensor_lock);
@@ -1706,7 +1706,7 @@ static int cm3629_power(int ls_or_ps, uint8_t enable)
 		if (rc)
 			pr_err("[PS][cm3629]'%s' regulator enable L9 failed, rc=%d\n", __func__,rc);
 		else
-			pr_info("[PS][cm3629]'%s' L9 power on\n", __func__);
+			pr_debug("[PS][cm3629]'%s' L9 power on\n", __func__);
 	}
 	mutex_unlock(&sensor_lock);
 	return rc;
@@ -2601,7 +2601,7 @@ static void headset_power(int enable)
 		gpio_tlmm_config(headset_cpu_gpio[i], GPIO_CFG_ENABLE);
 	}
 
-	pr_info("[HS_BOARD]%s mic bias\n", enable ? "Enable" : "Disable");
+	pr_debug("[HS_BOARD]%s mic bias\n", enable ? "Enable" : "Disable");
 	ret = gpio_request(MSM_V_HSMIC_2V85_EN, "headset_mic_bias");
 	if (ret) {
 		pr_err("[HS_BOARD]gpio_request for %d gpio failed rc(%d)\n", MSM_V_HSMIC_2V85_EN, ret);
@@ -2653,7 +2653,7 @@ static struct platform_device htc_headset_mgr = {
 
 static void headset_device_register(void)
 {
-	pr_info("[HS_BOARD] (%s) Headset device register\n", __func__);
+	pr_debug("[HS_BOARD] (%s) Headset device register\n", __func__);
 	platform_device_register(&htc_headset_mgr);
 }
 
@@ -3425,7 +3425,7 @@ static void __init k2_ul_init(void)
 
 	if ((engineerid & 0x02) == 2) {
 		if (!strcmp(msm_i2c_syn_gsbi3_info[0].type, SYNAPTICS_3200_NAME)) {
-			pr_info("[TP] alps sensor");
+			pr_debug("[TP] alps sensor");
 			msm_i2c_syn_gsbi3_info[0].platform_data = &syn_ts_3k_data_apl;
 		}
 	}

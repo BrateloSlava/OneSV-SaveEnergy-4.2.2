@@ -30,8 +30,11 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
+#include <mach/kgsl.h>
 
-#define DEF_SAMPLING_RATE				(50000)
+static int old_up_threshold;
+
+#define DEF_SAMPLING_RATE			(50000)
 #define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(10)
 #define DEF_FREQUENCY_UP_THRESHOLD		(80)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
@@ -42,7 +45,7 @@
 #define MIN_FREQUENCY_UP_THRESHOLD		(11)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 #define MIN_FREQUENCY_DOWN_DIFFERENTIAL		(1)
-#define DBS_INPUT_EVENT_MIN_FREQ		(1134000)
+#define DBS_INPUT_EVENT_MIN_FREQ		(918000)
 #define DEF_UI_DYNAMIC_SAMPLING_RATE		(30000)
 #define DBS_UI_SAMPLING_MIN_TIMEOUT		(30)
 #define DBS_UI_SAMPLING_MAX_TIMEOUT		(1000)
@@ -132,6 +135,7 @@ static struct dbs_tuners {
 	unsigned int ui_sampling_rate;
 	unsigned int ui_timeout;
 	unsigned int enable_boost_cpu;
+	int gboost;
 } dbs_tuners_ins = {
 	.up_threshold_multi_core = DEF_FREQUENCY_UP_THRESHOLD,
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -149,6 +153,7 @@ static struct dbs_tuners {
 	.ui_sampling_rate = DEF_UI_DYNAMIC_SAMPLING_RATE,
 	.ui_timeout = DBS_UI_SAMPLING_TIMEOUT,
 	.enable_boost_cpu = 1,
+	.gboost = 1,
 };
 
 bool is_ondemand_locked(void)
@@ -345,7 +350,8 @@ show_one(ignore_nice_load, ignore_nice);
 show_one(optimal_freq, optimal_freq);
 show_one(up_threshold_any_cpu_load, up_threshold_any_cpu_load);
 show_one(sync_freq, sync_freq);
-show_one(enable_boost_cpu, enable_boost_cpu)
+show_one(enable_boost_cpu, enable_boost_cpu);
+show_one(gboost, gboost);
 
 static ssize_t show_powersave_bias
 (struct kobject *kobj, struct attribute *attr, char *buf)
@@ -794,6 +800,19 @@ static ssize_t store_enable_boost_cpu(struct kobject *a, struct attribute *b,
 	return count;
 }
 
+static ssize_t store_gboost(struct kobject *a, struct attribute *b,
+				const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+
+	ret = sscanf(buf, "%u", &input);
+	if(ret != 1)
+		return -EINVAL;
+	dbs_tuners_ins.gboost = (input > 0 ? input : 0);
+	return count;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(io_is_busy);
 define_one_global_rw(up_threshold);
@@ -812,6 +831,7 @@ define_one_global_rw(input_event_min_freq);
 define_one_global_rw(ui_sampling_rate);
 define_one_global_rw(ui_timeout);
 define_one_global_rw(enable_boost_cpu);
+define_one_global_rw(gboost);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -833,6 +853,7 @@ static struct attribute *dbs_attributes[] = {
 	&ui_sampling_rate.attr,
 	&ui_timeout.attr,
 	&enable_boost_cpu.attr,
+	&gboost.attr,
 	NULL
 };
 
@@ -1043,6 +1064,16 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		}
 	}
 #endif
+
+//graphics boost
+	if (graphics_boost && dbs_tuners_ins.gboost) {
+		if (dbs_tuners_ins.up_threshold != 49)
+			old_up_threshold = dbs_tuners_ins.up_threshold;
+		dbs_tuners_ins.up_threshold = 49;
+	} else {
+		if (dbs_tuners_ins.up_threshold == 49)
+			dbs_tuners_ins.up_threshold = old_up_threshold;
+	}
 
 	if (num_online_cpus() > 1) {
 		if (max_load_other_cpu >
@@ -1283,7 +1314,28 @@ static void dbs_input_disconnect(struct input_handle *handle)
 }
 
 static const struct input_device_id dbs_ids[] = {
-	{ .driver_info = 1 },
+	/* multi-touch touchscreen */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.evbit = { BIT_MASK(EV_ABS) },
+		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
+			BIT_MASK(ABS_MT_POSITION_X) |
+			BIT_MASK(ABS_MT_POSITION_Y) },
+	},
+	/* touchpad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
+			INPUT_DEVICE_ID_MATCH_ABSBIT,
+		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
+		.absbit = { [BIT_WORD(ABS_X)] =
+			BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
+	},
+	/* Keypad */
+	{
+		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
+		.evbit = { BIT_MASK(EV_KEY) },
+	},
 	{ },
 };
 

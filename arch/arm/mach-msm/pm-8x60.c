@@ -454,7 +454,7 @@ void msm_pm_set_max_sleep_time(int64_t max_sleep_time_ns)
 	}
 
 	if (msm_pm_debug_mask & MSM_PM_DEBUG_SUSPEND)
-		pr_info("%s: Requested %lld ns Giving %u sclk ticks\n",
+		pr_debug("%s: Requested %lld ns Giving %u sclk ticks\n",
 			__func__, max_sleep_time_ns, msm_pm_max_sleep_time);
 }
 EXPORT_SYMBOL(msm_pm_set_max_sleep_time);
@@ -540,7 +540,7 @@ static bool __ref msm_pm_spm_power_collapse(
 	mb();
 
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: notify_rpm %d\n",
+		pr_debug("CPU%u: %s: notify_rpm %d\n",
 			cpu, __func__, (int) notify_rpm);
 
 	ret = msm_spm_set_low_power_mode(
@@ -552,7 +552,7 @@ static bool __ref msm_pm_spm_power_collapse(
 	msm_pm_boot_config_before_pc(cpu, virt_to_phys(entry));
 
 	if (MSM_PM_DEBUG_RESET_VECTOR & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: program vector to %p\n",
+		pr_debug("CPU%u: %s: program vector to %p\n",
 			cpu, __func__, entry);
 
 #ifdef CONFIG_VFP
@@ -631,7 +631,7 @@ static bool __ref msm_pm_spm_power_collapse(
 	}
 
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: msm_pm_collapse returned, collapsed %d\n",
+		pr_debug("CPU%u: %s: msm_pm_collapse returned, collapsed %d\n",
 			cpu, __func__, collapsed);
 
 	if (!from_idle && (MSM_PM_DEBUG_RPM_TIMESTAMP & msm_pm_debug_mask))
@@ -668,7 +668,7 @@ static bool msm_pm_power_collapse(bool from_idle)
 		return true;
 
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: idle %d\n",
+		pr_debug("CPU%u: %s: idle %d\n",
 			cpu, __func__, (int)from_idle);
 
 	if (smp_processor_id() == 0) {
@@ -680,17 +680,17 @@ static bool msm_pm_power_collapse(bool from_idle)
 					blk_xo_vddmin_count++;
 					parent_clk = clk->ops->get_parent?clk->ops->get_parent(clk):NULL;
 					if (clk->vdd_class)
-						pr_info("%s not off block xo vdig level %ld, parent clk: %s\n",
+						pr_debug("%s not off block xo vdig level %ld, parent clk: %s\n",
 								clk->dbg_name, clk->vdd_class->cur_level,
 								parent_clk?parent_clk->dbg_name:"none");
 					else
-						pr_info("%s not off block xo vdig level (none), parent clk: %s\n",
+						pr_debug("%s not off block xo vdig level (none), parent clk: %s\n",
 								clk->dbg_name, parent_clk?parent_clk->dbg_name:"none");
 				}
 			}
 			spin_unlock(&clk_enable_list_lock);
 			if (blk_xo_vddmin_count)
-				pr_info("%d clks are on that block xo or vddmin\n", blk_xo_vddmin_count);
+				pr_debug("%d clks are on that block xo or vddmin\n", blk_xo_vddmin_count);
 		}
 		if ((!from_idle) && (MSM_PM_DEBUG_RPM_STAT & msm_pm_debug_mask)){
 			msm_xo_print_voters_suspend();
@@ -703,7 +703,7 @@ static bool msm_pm_power_collapse(bool from_idle)
 
 	msm_pm_config_hw_before_power_down();
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: pre power down\n", cpu, __func__);
+		pr_debug("CPU%u: %s: pre power down\n", cpu, __func__);
 
 	avsdscr_setting = avs_get_avsdscr();
 	avs_disable();
@@ -715,7 +715,7 @@ static bool msm_pm_power_collapse(bool from_idle)
 	}
 
 	if ((!from_idle) && (MSM_PM_DEBUG_CLOCK & msm_pm_debug_mask))
-		pr_info("CPU%u: %s: change clock rate (old rate = %lu)\n",
+		pr_debug("CPU%u: %s: change clock rate (old rate = %lu)\n",
 			cpu, __func__, saved_acpuclk_rate);
 
 	collapsed = msm_pm_spm_power_collapse(cpu, from_idle, true);
@@ -726,7 +726,7 @@ static bool msm_pm_power_collapse(bool from_idle)
 		if (!from_idle)
 			radio_stat_dump();
 		if ((!from_idle) && (MSM_PM_DEBUG_CLOCK & msm_pm_debug_mask))
-			pr_info("CPU%u: %s: restore clock rate to %lu\n",
+			pr_debug("CPU%u: %s: restore clock rate to %lu\n",
 				cpu, __func__, saved_acpuclk_rate);
 		if (acpuclk_set_rate(cpu, saved_acpuclk_rate, SETRATE_PC) < 0)
 			pr_warn("CPU%u: %s: failed to restore clock rate(%lu)\n",
@@ -750,10 +750,10 @@ static bool msm_pm_power_collapse(bool from_idle)
 	avs_reset_delays(avsdscr_setting);
 	msm_pm_config_hw_after_power_up();
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: post power up\n", cpu, __func__);
+		pr_debug("CPU%u: %s: post power up\n", cpu, __func__);
 
 	if (MSM_PM_DEBUG_POWER_COLLAPSE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: return\n", cpu, __func__);
+		pr_debug("CPU%u: %s: return\n", cpu, __func__);
 	return collapsed;
 }
 
@@ -878,14 +878,14 @@ int msm_pm_idle_prepare(struct cpuidle_device *dev,
 						&power);
 
 			if (MSM_PM_DEBUG_IDLE & msm_pm_debug_mask)
-				pr_info("CPU%u: %s: %s, latency %uus, "
+				pr_debug("CPU%u: %s: %s, latency %uus, "
 					"sleep %uus, limit %p\n",
 					dev->cpu, __func__, state->desc,
 					latency_us, sleep_us, rs_limits);
 
 			if ((MSM_PM_DEBUG_IDLE_LIMITS & msm_pm_debug_mask) &&
 					rs_limits)
-				pr_info("CPU%u: %s: limit %p: "
+				pr_debug("CPU%u: %s: limit %p: "
 					"pxo %d, l2_cache %d, "
 					"vdd_mem %d, vdd_dig %d\n",
 					dev->cpu, __func__, rs_limits,
@@ -904,7 +904,7 @@ int msm_pm_idle_prepare(struct cpuidle_device *dev,
 		}
 
 		if (MSM_PM_DEBUG_IDLE & msm_pm_debug_mask)
-			pr_info("CPU%u: %s: allow %s: %d\n",
+			pr_debug("CPU%u: %s: allow %s: %d\n",
 				dev->cpu, __func__, state->desc, (int)allow);
 
 		if (allow) {
@@ -994,7 +994,7 @@ int msm_pm_idle_enter(enum msm_pm_sleep_mode sleep_mode)
 	uint64_t xo_shutdown_time, vdd_min_time;
 
 	if (MSM_PM_DEBUG_IDLE & msm_pm_debug_mask)
-		pr_info("CPU%u: %s: mode %d\n",
+		pr_debug("CPU%u: %s: mode %d\n",
 			smp_processor_id(), __func__, sleep_mode);
 
 	time = ktime_to_ns(ktime_get());
@@ -1186,7 +1186,7 @@ static int msm_pm_enter(suspend_state_t state)
 	dlp_ext_buck_en(0);
 #endif
 	if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-		pr_info("%s\n", __func__);
+		pr_debug("%s\n", __func__);
 
 	if (MSM_PM_DEBUG_GPIO & msm_pm_debug_mask) {
 		if (gpio_sleep_status_info) {
@@ -1263,7 +1263,7 @@ static int msm_pm_enter(suspend_state_t state)
 		uint32_t power;
 
 		if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-			pr_info("%s: power collapse\n", __func__);
+			pr_debug("%s: power collapse\n", __func__);
 
 		clock_debug_print_enabled();
 
@@ -1285,7 +1285,7 @@ static int msm_pm_enter(suspend_state_t state)
 
 		if ((MSM_PM_DEBUG_SUSPEND_LIMITS & msm_pm_debug_mask) &&
 				rs_limits)
-			pr_info("%s: limit %p: pxo %d, l2_cache %d, "
+			pr_debug("%s: limit %p: pxo %d, l2_cache %d, "
 				"vdd_mem %d, vdd_dig %d\n",
 				__func__, rs_limits,
 				rs_limits->pxo, rs_limits->l2_cache,
@@ -1326,15 +1326,15 @@ static int msm_pm_enter(suspend_state_t state)
 		msm_pm_add_stat(MSM_PM_STAT_SUSPEND, time);
 	} else if (allow[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE]) {
 		if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-			pr_info("%s: standalone power collapse\n", __func__);
+			pr_debug("%s: standalone power collapse\n", __func__);
 		msm_pm_power_collapse_standalone(false);
 	} else if (allow[MSM_PM_SLEEP_MODE_RETENTION]) {
 		if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-			pr_info("%s: retention\n", __func__);
+			pr_debug("%s: retention\n", __func__);
 		msm_pm_retention();
 	} else if (allow[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT]) {
 		if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-			pr_info("%s: swfi\n", __func__);
+			pr_debug("%s: swfi\n", __func__);
 		if (suspend_console_deferred)
 			suspend_console();
 
@@ -1364,7 +1364,7 @@ enter_exit:
 	dlp_ext_buck_en(1);
 #endif
 	if (MSM_PM_DEBUG_SUSPEND & msm_pm_debug_mask)
-		pr_info("%s: return\n", __func__);
+		pr_debug("%s: return\n", __func__);
 
 	return 0;
 }
@@ -1380,7 +1380,7 @@ static struct platform_suspend_ops msm_pm_ops = {
 static void do_expire_boot_lock(struct work_struct *work)
 {
 	enable_hlt();
-	pr_info("Release 'boot-time' no_halt_lock\n");
+	pr_debug("Release 'boot-time' no_halt_lock\n");
 }
 static DECLARE_DELAYED_WORK(work_expire_boot_lock, do_expire_boot_lock);
 
@@ -1404,7 +1404,7 @@ static void __init boot_lock_nohalt(void)
 	}
 	disable_hlt();
 	schedule_delayed_work(&work_expire_boot_lock, nohalt_timeout);
-	pr_info("Acquire 'boot-time' no_halt_lock %ds\n", nohalt_timeout / HZ);
+	pr_debug("Acquire 'boot-time' no_halt_lock %ds\n", nohalt_timeout / HZ);
 }
 
 void __init msm_pm_init_sleep_status_data(
@@ -1484,7 +1484,7 @@ static int __init msm_pm_init(void)
 
 	store_pm_boot_entry_addr();
 	get_pm_boot_vector_symbol_address(&addr);
-	pr_info("%s: msm_pm_boot_vector 0x%x", __func__, addr);
+	pr_debug("%s: msm_pm_boot_vector 0x%x", __func__, addr);
 	store_pm_boot_vector_addr(addr);
 
 	keep_dig_voltage_low_in_idle(true);
