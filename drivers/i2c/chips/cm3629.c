@@ -61,6 +61,7 @@ static DECLARE_DELAYED_WORK(polling_work, polling_do_work);
 static uint8_t sensor_chipId[3] = {0};
 static void report_near_do_work(struct work_struct *w);
 static DECLARE_DELAYED_WORK(report_near_work, report_near_do_work);
+//static int pocket_thd = 0;
 static int inter_error = 0;
 static int is_probe_success;
 static int lightsensor_cali;
@@ -2492,7 +2493,7 @@ err_free_ps_input_device:
 	return ret;
 }
 
-int power_key_check_in_pocket(void)
+int power_key_check_in_pocket(int check_dark)
 {
 	struct cm3629_info *lpi = lp_info;
 	int ls_dark;
@@ -2500,6 +2501,11 @@ int power_key_check_in_pocket(void)
 	uint32_t ls_adc = 0;
 	int ls_level = 0;
 	int i;
+#if 0
+	uint8_t ps1_adc = 0;
+	uint8_t ps2_adc = 0;
+	int ret = 0;
+#endif
 	if (!is_probe_success) {
 		D("[cm3629] %s return by cm3629 probe fail\n", __func__);
 		return 0;
@@ -2527,12 +2533,23 @@ int power_key_check_in_pocket(void)
 			break;
 		}
 	}
-	D("[cm3629] %s ls_adc %d, ls_level %d\n", __func__, ls_adc, ls_level);
 	ls_dark = (ls_level <= lpi->dark_level) ? 1 : 0;
+	D("[cm3629] %s ls_adc %d, ls_level %d\n", __func__, ls_adc, ls_level);
 
+	psensor_enable(lpi);
+// don't use new method of Sense5.5 for pocket near detection. 
+// too high threshold here for nearness
+#if 0
+	ret = get_ps_adc_value(&ps1_adc, &ps2_adc);
+	if (ps1_adc > pocket_thd)
+		ps_near = 1;
+	else
+		ps_near = 0;
+#endif
 	D("[cm3629] %s --- ls_dark %d\n", __func__, ls_dark);
+	psensor_disable(lpi);
 	pocket_mode_flag = 0;
-	return (ls_dark && ps_near);
+	return ((check_dark && ls_dark && ps_near) || (!check_dark && ps_near));
 }
 
 int psensor_enable_by_touch_driver(int on)
@@ -2673,8 +2690,6 @@ static int cm3629_probe(struct i2c_client *client,
 	if (!lpi)
 		return -ENOMEM;
 
-	
-
 	lpi->i2c_client = client;
 	pdata = client->dev.platform_data;
 	if (!pdata) {
@@ -2685,9 +2700,7 @@ static int cm3629_probe(struct i2c_client *client,
 	}
 
 	lpi->irq = client->irq;
-
 	lpi->mfg_mode = board_mfg_mode();
-
 	i2c_set_clientdata(client, lpi);
 	lpi->model = pdata->model;
 	lpi->intr_pin = pdata->intr;
@@ -2726,6 +2739,7 @@ static int cm3629_probe(struct i2c_client *client,
 	lpi->ps_th_add = (pdata->ps_th_add) ? pdata->ps_th_add : TH_ADD;
 	lpi->dark_level = pdata->dark_level;
 	lpi->correction_table = pdata->correction;
+
 	lp_info = lpi;
 
 	ret = cm3629_read_chip_id(lpi);

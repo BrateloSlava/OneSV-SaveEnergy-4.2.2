@@ -35,11 +35,11 @@
 
 #ifdef VIB_DBG_ENABLED
 #define VIB_DBG_LOG(fmt, ...) \
-                ({ if (0) printk(KERN_DEBUG "[VIB]" fmt, ##__VA_ARGS__); })
+		({ if (0) printk(KERN_DEBUG "[VIB]" fmt, ##__VA_ARGS__); })
 #define VIB_INFO_LOG(fmt, ...) \
-                printk(KERN_INFO "[VIB]" fmt, ##__VA_ARGS__)
+		printk(KERN_INFO "[VIB]" fmt, ##__VA_ARGS__)
 #define VIB_ERR_LOG(fmt, ...) \
-                printk(KERN_ERR "[VIB][ERR]" fmt, ##__VA_ARGS__)
+		printk(KERN_ERR "[VIB][ERR]" fmt, ##__VA_ARGS__)
 #else
 #define VIB_DBG_LOG(fmt, ...) { }
 #define VIB_INFO_LOG(fmt, ...) { }
@@ -201,6 +201,11 @@ retry:
 	}
 }
 
+int vibrate(int time)
+{
+    pm8xxx_vib_enable(&vib_dev->timed_dev, time);
+    return 0;
+}
 
 static int pm8xxx_vib_get_time(struct timed_output_dev *dev)
 {
