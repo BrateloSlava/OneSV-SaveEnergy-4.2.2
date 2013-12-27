@@ -1,7 +1,7 @@
 VERSION = 3
 PATCHLEVEL = 4
 SUBLEVEL = 10
-EXTRAVERSION = .*SaveEnergy*
+EXTRAVERSION = .*ALINA*
 NAME = Saber-toothed Squirrel
 
 # *DOCUMENTATION*
@@ -355,8 +355,8 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   = -Os
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=  -ftree-vectorize -fsingle-precision-constant
+LDFLAGS_MODULE  = 
+CFLAGS_KERNEL	= -marm -march=armv7-a -mtune=cortex-a9 -mfpu=neon-vfpv4 -ftree-vectorize
 AFLAGS_KERNEL	= 
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
@@ -566,7 +566,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O3 -fno-inline-functions #-funroll-loops
+KBUILD_CFLAGS	+= -O2
 endif
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
