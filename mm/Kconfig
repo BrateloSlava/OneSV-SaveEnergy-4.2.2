@@ -388,3 +388,7 @@ config DYNAMIC_PAGE_WRITEBACK
 	  when the system is suspended and when the system has been resumed.
 
 	  If unsure, say N to disable this feature
+
+config CGROUP_MEM_RES_CTRL
+	bool "Add memory.pressure_level events for memcfg"
+	default y
